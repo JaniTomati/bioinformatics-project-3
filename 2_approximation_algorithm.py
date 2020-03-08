@@ -13,7 +13,7 @@ cost = np.array([
     # A  C  G  T
     [0, 5, 2, 5],
     [5, 0, 5, 2],
-    [2, 5, 0, 2],
+    [2, 5, 0, 5],
     [5, 2, 5, 0]])
 gap_cost = 5
 look_up = {"A": 0, "C": 1, "G": 2, "T": 3, "N": 0, "R": 0, "S": 0}
@@ -130,11 +130,11 @@ def traceback(opt, seq1, seq2):
             s2 += seq2[j-1]
             i -= 1
             j -= 1
-        elif opt[i-1, j] + gap_cost == opt[i,j]:
+        elif opt[i,j] == opt[i-1, j] + gap_cost:
             s1 += seq1[i-1]
             s2 += "-"
             i -= 1
-        elif opt[i, j-1] + gap_cost == opt[i,j]:
+        elif opt[i,j] == opt[i, j-1] + gap_cost:
             s1 += "-"
             s2 += seq2[j-1]
             j -= 1
@@ -162,8 +162,8 @@ def extendExistingRow(current_row, new_gaps, disered_length):
         else:
             new_row.append(current_row[i])
 
-    while len(new_row) < disered_length:
-        new_row.append("-")
+    while len(new_row) < disered_length: # if the Matrix M is smaller than the new entered optimal alignment
+        new_row.append("-") # add gaps in the end of the row
 
     return np.array(new_row)
 
@@ -176,7 +176,6 @@ def extendMSAMatrix(OPT, M):
     new_gaps = []
     new_row = [] # row that inserts the new sequence in the matrix M
 
-    gap_index = 0
     while j < len(OPT[0]): # miau
         if OPT[0][j] == "-":
             new_row.append(OPT[1][j])
@@ -190,7 +189,7 @@ def extendMSAMatrix(OPT, M):
             j += 1
             i += 1
 
-    while len(new_row) < len(M[0]) + len(new_gaps):
+    while len(new_row) < len(M[0]) + len(new_gaps): # if Matrix M is bigger than the new_row
         new_row.append("-")
 
     for row in M:
@@ -206,26 +205,19 @@ def main():
     center_index, center_sequence = determine_center_sequence(sequences)
     print("Determined center sequence:", center_sequence)
 
-    # for seq in sequences:
-    #     if seq != center_sequence:
-    #         opt = optimal_alignment(center_sequence, seq)
-    #         opt2 = pairwise2.align.globalxx(center_sequence, seq)
-    #         alignment = traceback(opt, center_sequence, seq)
-
     for i in range(len(sequences)):
         if i != center_index: # do not calculate optimal alignment between the center sequence and itself
-            # opt = optimal_alignment(sequences[center_index], sequences[i])
-            # alignment = traceback(opt, sequences[center_index], sequences[i])
-            opt2 = pairwise2.align.globalxx(center_sequence, sequences[i])
-            print(opt2)
+            opt = optimal_alignment(sequences[center_index], sequences[i])
+            alignment = traceback(opt, sequences[center_index], sequences[i])
+            print(alignment)
+            # opt2 = pairwise2.align.globalxx(center_sequence, sequences[i])
 
             if i != 0:
-                # M = extendMSAMatrix(alignment, M)
-                print(opt2[0][0])
-                M = extendMSAMatrix((opt2[0][0], opt2[0][1]), M)
+                M = extendMSAMatrix(alignment, M)
+                # M = extendMSAMatrix((opt2[0][0], opt2[0][1]), M)
             else:   # set M to the first optimal alignment
-                # M = np.array([alignment[0], alignment[1]])
-                M = np.array([opt2[0][0], opt2[0][1]])
+                M = np.array([alignment[0], alignment[1]])
+                # M = np.array([opt2[0][0], opt2[0][1]])
     print(M)
 
 
