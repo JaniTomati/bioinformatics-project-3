@@ -5,6 +5,8 @@ import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from Bio import pairwise2
+
 
 # Default values
 cost = np.array([
@@ -97,7 +99,7 @@ def determine_center_sequence(sequences):
 
 def optimal_alignment(seq1, seq2):
     """ Calculate the pairwise optimal alignment between two sequences using linear gapcost """
-    m, n = len(seq1) + 1, len(seq2) + 1
+    n, m = len(seq1) + 1, len(seq2) + 1
     align_matrix = np.zeros((n, m))
     for i in range(n):
         for j in range(m):
@@ -107,56 +109,50 @@ def optimal_alignment(seq1, seq2):
                 align_matrix[i, j] = align_matrix[i-1, j] + gap_cost
             elif i == 0:
                 align_matrix[i, j] = align_matrix[i, j-1] + gap_cost
-
             else:
-                val = min(
-                    align_matrix[i-1, j-1] + cost[look_up[seq2[i-1]], look_up[seq1[j-1]]],
+                align_matrix[i, j] = min(
+                    align_matrix[i-1, j-1] + cost[look_up[seq1[i-1]], look_up[seq2[j-1]]],
                     align_matrix[i-1, j] + gap_cost,
                     align_matrix[i, j-1] + gap_cost
                 )
-                align_matrix[i, j] = val
 
     return align_matrix
 
 
 def traceback(opt, seq1, seq2):
     """ Traceback the optimal alignment of two sequences """
-    s1 = []
-    s2 = []
-    i, j = len(seq2), len(seq1)
-    while i > 0 and j > 0:
-        if opt[i, j] == opt[i-1, j-1]+cost[look_up[seq1[j-1]], look_up[seq2[i-1]]]:
-            s2.append(seq2[i-1])
-            s1.append(seq1[j-1])
+    s1 = ""
+    s2 = ""
+    i, j = len(seq1), len(seq2)
+    while i >= 0 and j >= 0:
+        if opt[i, j] == opt[i-1, j-1] + cost[look_up[seq1[i-1]], look_up[seq2[j-1]]]:
+            s1 += seq1[i-1]
+            s2 += seq2[j-1]
             i -= 1
             j -= 1
-
         elif opt[i-1, j] + gap_cost == opt[i,j]:
-            s1.append("-")
-            s2.append(seq2[i-1])
+            s1 += seq1[i-1]
+            s2 += "-"
             i -= 1
-
         elif opt[i, j-1] + gap_cost == opt[i,j]:
-            s2.append("-")
-            s1.append(seq1[j-1])
+            s1 += "-"
+            s2 += seq2[j-1]
             j -= 1
-
         elif i == 0:
             while j >= 0:
-                s2.append("-")
+                if j > 0:
+                    s1 += ("-")
                 j -= 1
         elif j == 0:
             while i >= 0:
-                s1.append("-")
+                if i > 0:
+                    s2 += ("-")
                 i -= 1
 
-    s1 = "".join(s1[::-1])
-    s2 = "".join(s2[::-1])
-
-    return s1, s2
+    return s1[::-1], s2[::-1]
 
 
-def extendExistingRow(current_row, new_gaps):
+def extendExistingRow(current_row, new_gaps, disered_length):
     """ Introduce new gaps into the existing rows of the matrix M """
     new_row = []
     for i in range(len(current_row)):
@@ -165,6 +161,9 @@ def extendExistingRow(current_row, new_gaps):
             new_row.append(current_row[i])
         else:
             new_row.append(current_row[i])
+
+    while len(new_row) < disered_length:
+        new_row.append("-")
 
     return np.array(new_row)
 
@@ -177,21 +176,25 @@ def extendMSAMatrix(OPT, M):
     new_gaps = []
     new_row = [] # row that inserts the new sequence in the matrix M
 
-    while i < len(M[0]):
-        if M[0][i] == OPT[0][j]:
-            new_row.append(OPT[1][j])
-            j += 1
-            i += 1
-        elif M[0][i] == "-":
-            new_row.append("-")
-            i += 1
-        elif OPT[0][j] == "-":
+    gap_index = 0
+    while j < len(OPT[0]): # miau
+        if OPT[0][j] == "-":
             new_row.append(OPT[1][j])
             new_gaps.append(i) # introduce new gap in position "i" of the matrix
             j += 1
+        elif M[0][i] == "-":
+            new_row.append("-")
+            i += 1
+        elif M[0][i] == OPT[0][j]:
+            new_row.append(OPT[1][j])
+            j += 1
+            i += 1
+
+    while len(new_row) < len(M[0]) + len(new_gaps):
+        new_row.append("-")
 
     for row in M:
-        extendedM.append(extendExistingRow(row, new_gaps))
+        extendedM.append(extendExistingRow(row, new_gaps, len(new_row)))
 
     extendedM.append(np.array(new_row))
     return np.array(extendedM)
@@ -203,22 +206,27 @@ def main():
     center_index, center_sequence = determine_center_sequence(sequences)
     print("Determined center sequence:", center_sequence)
 
-    for seq in sequences:
-        opt = optimal_alignment(center_sequence, seq)
-        alignment = traceback(opt, center_sequence, seq)
-        print(alignment)
+    # for seq in sequences:
+    #     if seq != center_sequence:
+    #         opt = optimal_alignment(center_sequence, seq)
+    #         opt2 = pairwise2.align.globalxx(center_sequence, seq)
+    #         alignment = traceback(opt, center_sequence, seq)
 
-    # for i in range(len(sequences)):
-    #     if i != center_index: # do not calculate optimal alignment between the center sequence and itself
-    #         opt = optimal_alignment(sequences[center_index], sequences[i])
-    #         alignment = traceback(opt, sequences[center_index], sequences[i])
-    #
-    #         if i != 0:
-    #             M = extendMSAMatrix(alignment, M)
-    #         else:   # set M to the first optimal alignment
-    #             M = np.array([alignment[0], alignment[1]])
-    #     print(i)
-    # print(M)
+    for i in range(len(sequences)):
+        if i != center_index: # do not calculate optimal alignment between the center sequence and itself
+            # opt = optimal_alignment(sequences[center_index], sequences[i])
+            # alignment = traceback(opt, sequences[center_index], sequences[i])
+            opt2 = pairwise2.align.globalxx(center_sequence, sequences[i])
+            print(opt2)
+
+            if i != 0:
+                # M = extendMSAMatrix(alignment, M)
+                print(opt2[0][0])
+                M = extendMSAMatrix((opt2[0][0], opt2[0][1]), M)
+            else:   # set M to the first optimal alignment
+                # M = np.array([alignment[0], alignment[1]])
+                M = np.array([opt2[0][0], opt2[0][1]])
+    print(M)
 
 
 
