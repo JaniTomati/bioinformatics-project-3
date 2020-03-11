@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+# python3 2_approximation_algorithm.py -c scoring_matrix.txt -s testdata_short.fasta
 
+
+import argparse
 import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio import pairwise2
-
+# from Bio import pairwise2
 
 # Default values
 cost = np.array([
@@ -16,7 +18,23 @@ cost = np.array([
     [2, 5, 0, 5],
     [5, 2, 5, 0]])
 gap_cost = 5
+alphabet = ["A", "C", "G", "T"]
 look_up = {"A": 0, "C": 1, "G": 2, "T": 3, "N": 0, "R": 0, "S": 0}
+
+def parse_arguments():
+    """ Parse the necessary arguments, otherwise use default """
+    global cost, gap_cost
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", help = "File that holds all sequences that are to be aligned")
+    parser.add_argument("-c", help = "Txt file defining the cost matrix in a Phylip-like format")
+    args = parser.parse_args()
+    cost_file = args.c
+    sequence_file = args.s
+
+    if cost_file is not None:
+        gap_cost, cost, alphabet = read_in_scoring_matrix(cost_file)
+
+    return sequence_file
 
 
 def read_in_sequences(file):
@@ -200,8 +218,11 @@ def extendMSAMatrix(OPT, M):
 
 
 def main():
-    sequences = ["ATTCT", "ACGT", "CTCGA", "ACGGT"]
-    # sequences = read_in_sequences("testdata_short.fasta")
+    sequence_file = parse_arguments()
+    print("Reading sequences from", sequence_file, "\n")
+
+    # sequences = ["ATTCT", "ACGT", "CTCGA", "ACGGT"]
+    sequences = read_in_sequences(sequence_file)
     center_index, center_sequence = determine_center_sequence(sequences)
     print("Determined center sequence:", center_sequence)
 
@@ -214,10 +235,8 @@ def main():
 
             if i != 0:
                 M = extendMSAMatrix(alignment, M)
-                # M = extendMSAMatrix((opt2[0][0], opt2[0][1]), M)
             else:   # set M to the first optimal alignment
                 M = np.array([alignment[0], alignment[1]])
-                # M = np.array([opt2[0][0], opt2[0][1]])
     print(M)
 
 
