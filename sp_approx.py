@@ -21,9 +21,21 @@ gap_cost = 5
 alphabet = ["A", "C", "G", "T"]
 look_up = {"A": 0, "C": 1, "G": 2, "T": 3, "N": 0, "R": 0, "S": 0}
 
+
+def print_usage():
+    """ Define a usage message """
+    print("""
+          Usage: sp_approx.py -s <sequence_file> -c <cost_file>\n
+          where <sequence_file> contains a set of sequences over the alphabet
+          {A,C,G,T,-} in FASTA format.
+          And <cost_file> contains a cost matrix and a gap cost in a phylip-like
+          format. If -c is not specified, the default values are used.
+          """)
+
+
 def parse_arguments():
     """ Parse the necessary arguments, otherwise use default """
-    global cost, gap_cost
+    global cost, gap_cost, alphabet
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", help = "File that holds all sequences that are to be aligned")
     parser.add_argument("-c", help = "Txt file defining the cost matrix in a Phylip-like format")
@@ -31,7 +43,15 @@ def parse_arguments():
     cost_file = args.c
     sequence_file = args.s
 
-    if cost_file is not None:
+    if sequence_file is None:
+        print_usage()
+        sys.exit(1)
+
+    if cost_file is None:
+        print("Using default values:")
+        print("Gapcost:", gap_cost)
+        print("Subcost:\n", cost, "\n")
+    else:
         gap_cost, cost, alphabet = read_in_scoring_matrix(cost_file)
 
     return sequence_file
@@ -216,6 +236,15 @@ def extendMSAMatrix(OPT, M):
     extendedM.append(np.array(new_row))
     return np.array(extendedM)
 
+def pretty_print_M(M):
+    """ Print the content of M as a string """
+    print("MSA")
+    print("=======================================================")
+    for row in M:
+        string = ""
+        for char in row:
+            string += char
+        print(string)
 
 def main():
     sequence_file = parse_arguments()
@@ -224,20 +253,20 @@ def main():
     # sequences = ["ATTCT", "ACGT", "CTCGA", "ACGGT"]
     sequences = read_in_sequences(sequence_file)
     center_index, center_sequence = determine_center_sequence(sequences)
-    print("Determined center sequence:", center_sequence)
+    print("Determined center sequence:", center_sequence, "\n")
 
     for i in range(len(sequences)):
         if i != center_index: # do not calculate optimal alignment between the center sequence and itself
             opt = optimal_alignment(sequences[center_index], sequences[i])
             alignment = traceback(opt, sequences[center_index], sequences[i])
-            print(alignment)
             # opt2 = pairwise2.align.globalxx(center_sequence, sequences[i])
 
             if i != 0:
                 M = extendMSAMatrix(alignment, M)
             else:   # set M to the first optimal alignment
                 M = np.array([alignment[0], alignment[1]])
-    print(M)
+
+    pretty_print_M(M)
 
 
 

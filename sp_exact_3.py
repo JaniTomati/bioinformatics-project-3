@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+# python3 sp_exact_3.py -s testdata_short.fasta -c scoring_matrix.txt
 
 import sys
+import argparse
 import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -17,6 +19,76 @@ cost = np.array([
 gap_cost = 5
 alphabet = ["A", "C", "G", "T"]
 look_up = {"A": 0, "C": 1, "G": 2, "T": 3, "N": 0, "R": 0, "S": 0}
+
+
+def print_usage():
+    """ Define a usage message """
+    print("""
+          Usage: sp_exact_3.py -s <sequence_file> -c <cost_file>\n
+          where <sequence_file> contains a set of sequences over the alphabet
+          {A,C,G,T,-} in FASTA format.
+          And <cost_file> contains a cost matrix and a gap cost in a phylip-like
+          format. If -c is not specified, the default values are used.
+          """)
+
+
+def parse_arguments():
+    """ Parse the necessary arguments, otherwise use default """
+    global cost, gap_cost, alphabet
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", help = "File that holds all sequences that are to be aligned")
+    parser.add_argument("-c", help = "Txt file defining the cost matrix in a Phylip-like format")
+    args = parser.parse_args()
+    cost_file = args.c
+    sequence_file = args.s
+
+    if sequence_file is None:
+        print_usage()
+        sys.exit(1)
+
+    if cost_file is None:
+        print("Using default values:")
+        print("Gapcost:", gap_cost)
+        print("Subcost:\n", cost)
+    else:
+        gap_cost, cost, alphabet = read_in_scoring_matrix(cost_file)
+
+    return sequence_file
+
+
+def read_in_sequences(file):
+    """ Read in a fasta file containing sequences """
+    sequences = []
+    for seq_record in SeqIO.parse(file, "fasta"):
+        sequences.append(seq_record.seq.upper())
+
+    return sequences
+
+
+def read_in_scoring_matrix(file):
+    """ Read in the alphabet, scoring matrix and gap cost """
+    alphabet = []
+    scoring_matrix = []
+
+    with open(file, "r") as f:
+        lines = f.readlines()
+
+    firstLine = True
+    for line in lines:
+        line_arr = line.rstrip().split()
+        if firstLine == True:
+            gapcost = int(line_arr[0])
+            firstLine = False
+        else:
+            row = []
+            for char in line_arr:
+                if char == line_arr[0]: # add char to alphabet
+                    alphabet.append(char)
+                else:                   # add cost to scoring matrix
+                    row.append(int(char))
+            scoring_matrix.append(row)
+
+    return gapcost, np.array(scoring_matrix), alphabet
 
 
 def score_pair(a, b):
@@ -165,21 +237,25 @@ def backtracking(T, A, B, C):
                     S2 += ("-")
                 k -= 1
 
-    print(s1[::-1] + "\n" + s2[::-1] + "\n" + s3[::-1])
+    # print(s1[::-1] + "\n" + s2[::-1] + "\n" + s3[::-1])
     return (s1[::-1], s2[::-1], s3[::-1])
 
 
 def main():
-    A = "AAGTC"
-    B = "ACGGAATC"
-    C = "AGTACACT"
-    T = compute_msa(A, B, C)
-    alignment = backtracking(T, A, B, C)
-    # print("0", T[0]) # i, j
-    # print("1", T[1]) # i, k
-    # print("2", T[2]) # j, k
+    sequence_file = parse_arguments()
+    print("Reading sequences from", sequence_file, "\n")
 
+    # sequences = ["ATTCT", "ACGT", "CTCGA", "ACGGT"]
+    sequences = read_in_sequences(sequence_file)
+    if len(sequences) > 3:
+        print("Only using the first three sequences from the file.")
 
+    T = compute_msa(sequences[0], sequences[1], sequences[2])
+    alignment = backtracking(T, sequences[0], sequences[1], sequences[2])
+
+    print("\nMSA")
+    print("----------------------------------------")
+    print(alignment[0] + "\n" + alignment[1] + "\n" + alignment[2])
 
 
 if __name__ == '__main__':
