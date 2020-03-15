@@ -190,18 +190,14 @@ def traceback(opt, seq1, seq2):
     return s1[::-1], s2[::-1]
 
 
-def extendExistingRow(current_row, new_gaps, disered_length):
+def extendExistingRow(current_row, new_gaps):
     """ Introduce new gaps into the existing rows of the matrix M """
     new_row = []
     for i in range(len(current_row)):
-        if i in new_gaps:   # insert new gap
-            new_row.append("-")
-            new_row.append(current_row[i])
-        else:
-            new_row.append(current_row[i])
-
-    while len(new_row) < disered_length: # if the Matrix M is smaller than the new entered optimal alignment
-        new_row.append("-") # add gaps in the end of the row
+        if i in new_gaps:
+            for gaps in range(new_gaps[i]):
+                new_row.append("-")
+        new_row.append(current_row[i])
 
     return np.array(new_row)
 
@@ -211,13 +207,17 @@ def extendMSAMatrix(OPT, M):
     extendedM = []
 
     i, j = 0, 0
-    new_gaps = []
+    gap_index = 0
+    new_gaps = {}
     new_row = [] # row that inserts the new sequence in the matrix M
 
-    while j < len(OPT[0]): # miau
+    while i < len(M[0]):
         if OPT[0][j] == "-":
             new_row.append(OPT[1][j])
-            new_gaps.append(i) # introduce new gap in position "i" of the matrix
+            if i not in new_gaps: # introduce a gap at position i in the matrix
+                new_gaps[i] = 1
+            else:
+                new_gaps[i] += 1 # extend an existing gap at position i
             j += 1
         elif M[0][i] == "-":
             new_row.append("-")
@@ -227,11 +227,8 @@ def extendMSAMatrix(OPT, M):
             j += 1
             i += 1
 
-    while len(new_row) < len(M[0]) + len(new_gaps): # if Matrix M is bigger than the new_row
-        new_row.append("-")
-
     for row in M:
-        extendedM.append(extendExistingRow(row, new_gaps, len(new_row)))
+        extendedM.append(extendExistingRow(row, new_gaps))
 
     extendedM.append(np.array(new_row))
     return np.array(extendedM)
@@ -252,7 +249,6 @@ def verify_MSA(M, alignments):
     s1 = ""
     s2 = ""
     count_alignments = 0
-
     verified = True
     for i in range(1, len(M)):
         for j in range(len(M[i])):
@@ -271,7 +267,6 @@ def verify_MSA(M, alignments):
         s2 = ""
 
     return verified
-
 
 
 def main():
