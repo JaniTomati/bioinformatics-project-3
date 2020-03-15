@@ -8,7 +8,6 @@ import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-# from Bio import pairwise2
 
 # Default values
 cost = np.array([
@@ -246,6 +245,8 @@ def pretty_print_M(M):
 
 
 def verify_MSA(M, alignments):
+    """ Get the pairwise alignments from the MSA matrix by deleting gap columns.
+        Compare the alignments to the optimal alignments that have been calculated before """
     s1 = ""
     s2 = ""
     count_alignments = 0
@@ -278,7 +279,7 @@ def main():
     center_index, center_sequence = determine_center_sequence(sequences)
     print("Determined center sequence:", center_sequence, "\n")
 
-    alignments = [] # save all alignments
+    alignments = [] # save all alignments in order to verify later
 
     M = None
     for i in range(len(sequences)):
@@ -286,7 +287,6 @@ def main():
             opt = optimal_alignment(sequences[center_index], sequences[i])
             alignment = traceback(opt, sequences[center_index], sequences[i])
             alignments.append(alignment)
-            # opt2 = pairwise2.align.globalxx(center_sequence, sequences[i])
 
             if M is not None:
                 M = extendMSAMatrix(alignment, M)
@@ -298,7 +298,6 @@ def main():
         print("\nMSA verified! :-)")
     else:
         print("\nMSA could not be verified! :-(")
-
 
 
 if __name__ == '__main__':
