@@ -266,7 +266,6 @@ def main():
                 M = extendMSAMatrix(alignment, M)
             else:   # set M to the first optimal alignment
                 M = np.array([alignment[0], alignment[1]])
-                print("HI")
 
     pretty_print_M(M)
 
