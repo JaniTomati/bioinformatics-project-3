@@ -255,16 +255,18 @@ def main():
     center_index, center_sequence = determine_center_sequence(sequences)
     print("Determined center sequence:", center_sequence, "\n")
 
+    M = None
     for i in range(len(sequences)):
         if i != center_index: # do not calculate optimal alignment between the center sequence and itself
             opt = optimal_alignment(sequences[center_index], sequences[i])
             alignment = traceback(opt, sequences[center_index], sequences[i])
             # opt2 = pairwise2.align.globalxx(center_sequence, sequences[i])
 
-            if i != 0:
+            if M is not None:
                 M = extendMSAMatrix(alignment, M)
             else:   # set M to the first optimal alignment
                 M = np.array([alignment[0], alignment[1]])
+                print("HI")
 
     pretty_print_M(M)
 
