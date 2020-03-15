@@ -236,6 +236,7 @@ def extendMSAMatrix(OPT, M):
     extendedM.append(np.array(new_row))
     return np.array(extendedM)
 
+
 def pretty_print_M(M):
     """ Print the content of M as a string """
     print("MSA")
@@ -246,6 +247,33 @@ def pretty_print_M(M):
             string += char
         print(string)
 
+
+def verify_MSA(M, alignments):
+    s1 = ""
+    s2 = ""
+    count_alignments = 0
+
+    verified = True
+    for i in range(1, len(M)):
+        for j in range(len(M[i])):
+            if not (M[0][j] == "-" and M[i][j] == "-"): # M[0] is center sequence
+                s1 += M[0][j]
+                s2 += M[i][j]
+        if alignments[count_alignments][0] != s1:
+            verified = False
+            print("\n" + alignments[count_alignments][0] + "\n" + s1 + "\n")
+        if alignments[count_alignments][1] != s2:
+            verified = False
+            print(alignments[count_alignments][1] + "\n" + s2 + "\n")
+
+        count_alignments += 1
+        s1 = ""
+        s2 = ""
+
+    return verified
+
+
+
 def main():
     sequence_file = parse_arguments()
     print("Reading sequences from", sequence_file, "\n")
@@ -255,11 +283,14 @@ def main():
     center_index, center_sequence = determine_center_sequence(sequences)
     print("Determined center sequence:", center_sequence, "\n")
 
+    alignments = [] # save all alignments
+
     M = None
     for i in range(len(sequences)):
         if i != center_index: # do not calculate optimal alignment between the center sequence and itself
             opt = optimal_alignment(sequences[center_index], sequences[i])
             alignment = traceback(opt, sequences[center_index], sequences[i])
+            alignments.append(alignment)
             # opt2 = pairwise2.align.globalxx(center_sequence, sequences[i])
 
             if M is not None:
@@ -268,6 +299,10 @@ def main():
                 M = np.array([alignment[0], alignment[1]])
 
     pretty_print_M(M)
+    if verify_MSA(M, alignments):
+        print("\nMSA verified! :-)")
+    else:
+        print("\nMSA could not be verified! :-(")
 
 
 

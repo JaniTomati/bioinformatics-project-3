@@ -137,40 +137,8 @@ def compute_msa(A, B, C):
                     v7 = T[i][j][k-1] + SP("-", "-", C[k - 1])
                 T[i][j][k] = min(v0, v1, v2, v3, v4, v5, v6, v7)
 
+    print("Score:", T[n - 1][m - 1][o - 1])
     return T
-
-
-def traceback(T, seq1, seq2, dim):
-    """ Traceback the optimal alignment of two sequences """
-    s1 = ""
-    s2 = ""
-    i, j = len(seq1), len(seq2)
-    while i >= 0 and j >= 0:
-        if opt[dim][i, j] == opt[dim][i-1, j-1] + cost[look_up[seq1[i-1]], look_up[seq2[j-1]]]:
-            s1 += seq1[i-1]
-            s2 += seq2[j-1]
-            i -= 1
-            j -= 1
-        elif opt[dim][i,j] == opt[dim][i-1, j] + gap_cost:
-            s1 += seq1[i-1]
-            s2 += "-"
-            i -= 1
-        elif opt[dim][i,j] == opt[dim][i, j-1] + gap_cost:
-            s1 += "-"
-            s2 += seq2[j-1]
-            j -= 1
-        elif i == 0:
-            while j >= 0:
-                if j > 0:
-                    s1 += ("-")
-                j -= 1
-        elif j == 0:
-            while i >= 0:
-                if i > 0:
-                    s2 += ("-")
-                i -= 1
-
-    return s1[::-1], s2[::-1]
 
 
 def backtracking(T, A, B, C):
