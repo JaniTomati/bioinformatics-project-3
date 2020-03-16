@@ -60,12 +60,7 @@ def read_in_sequences(file):
     """ Read in a fasta file containing sequences """
     sequences = []
     for seq_record in SeqIO.parse(file, "fasta"):
-        if seq_record.seq != "":
-            sequences.append(seq_record.seq.upper())
-
-    if len(sequences) != 3:
-        print("Error: Please enter a fasta file that contains three sequences!")
-        sys.exit(1)
+        sequences.append(seq_record.seq.upper())
 
     return sequences
 
@@ -150,7 +145,7 @@ def backtracking(T, A, B, C):
     """ Create a traceback of the multiple sequence alignment """
     s1, s2, s3 = "", "", ""
     i, j, k = len(A), len(B), len(C)
-    while i >= 0 and j >= 0 and k >= 0:
+    while i > 0 or j > 0 or k > 0:
         if T[i][j][k] == T[i - 1][j - 1][k - 1] + SP(A[i - 1], B[j - 1], C[k - 1]):
             s1 += A[i-1]
             s2 += B[j-1]
@@ -191,26 +186,7 @@ def backtracking(T, A, B, C):
             s2 += "-"
             s3 += C[k - 1]
             k -= 1
-        elif j == 0 and k == 0:
-            while i >= 0:
-                if i > 0:
-                    s2 += ("-")
-                    S3 += ("-")
-                i -= 1
-        elif i == 0 and k == 0:
-            while j >= 0:
-                if j > 0:
-                    s1 += ("-")
-                    S3 += ("-")
-                j -= 1
-        elif i == 0 and j == 0:
-            while k >= 0:
-                if k > 0:
-                    s1 += ("-")
-                    S2 += ("-")
-                k -= 1
 
-    # print(s1[::-1] + "\n" + s2[::-1] + "\n" + s3[::-1])
     return (s1[::-1], s2[::-1], s3[::-1])
 
 
