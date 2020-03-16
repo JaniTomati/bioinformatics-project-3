@@ -9,7 +9,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
 # Example call
-# python3 sp_exact3.py --C scoring_matrix.txt --P Y Seqs.fasta
+# python3 sp_approx.py --C scoring_matrix.txt --P Y Seqs.fasta
 
 # Default values
 cost = np.array([
@@ -220,6 +220,8 @@ def test_alignment_algorithm():
 
 
 def verify_MSA(M, alignments):
+	""" Get the pairwise alignments from the MSA matrix by deleting gap columns.
+		Compare the alignments to the optimal alignments that have been calculated before """
 	s1 = ""
 	s2 = ""
 	count_alignments = 0
@@ -282,9 +284,9 @@ def main():
 
 	verify = verify_MSA(opt, alignments)
 	if verify:
-		print("Verified.")
+		print("MSA verified.")
 	else:
-		print("No verified.")
+		print("MSA not verified.")
 
 	op1 = []
 	for st in opt:
