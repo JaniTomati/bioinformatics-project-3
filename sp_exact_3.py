@@ -60,7 +60,12 @@ def read_in_sequences(file):
     """ Read in a fasta file containing sequences """
     sequences = []
     for seq_record in SeqIO.parse(file, "fasta"):
-        sequences.append(seq_record.seq.upper())
+        if seq_record.seq != "":
+            sequences.append(seq_record.seq.upper())
+
+    if len(sequences) != 3:
+        print("Error: Please enter a fasta file that contains three sequences!")
+        sys.exit(1)
 
     return sequences
 

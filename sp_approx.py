@@ -275,9 +275,13 @@ def main():
 
 	### Running the Code ###
 	seq_list = []
+	count_records = 0
 	for seq_record in SeqIO.parse(seqs, "fasta"):
-		seq_list.append((seq_record.seq.upper()))
-
+		if seq_record.seq != "":
+			seq_list.append((seq_record.seq.upper()))
+		else:
+			print("Info: Skipped sequence", count_records, "because it was empty.\n")
+		count_records += 1
 
 	start_opt = time.time()
 	opt, alignments = combine(seq_list)
