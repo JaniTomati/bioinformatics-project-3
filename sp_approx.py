@@ -220,28 +220,29 @@ def test_alignment_algorithm():
 
 
 def verify_MSA(M, alignments):
-	""" Get the pairwise alignments from the MSA matrix by deleting gap columns.
-		Compare the alignments to the optimal alignments that have been calculated before """
-	s1 = ""
-	s2 = ""
-	count_alignments = 0
+    """ Get the pairwise alignments from the MSA matrix by deleting gap columns.
+        Compare the alignments to the optimal alignments that have been calculated before """
+    s1 = ""
+    s2 = ""
+    count_alignments = 0
+    verified = True
+    for i in range(1, len(M)):
+        for j in range(len(M[i])):
+            if not (M[0][j] == "-" and M[i][j] == "-"): # M[0] is center sequence
+                s1 += M[0][j]
+                s2 += M[i][j]
+        if alignments[count_alignments][0] != s1:
+            verified = False
+            print("\n" + alignments[count_alignments][0] + "\n" + s1 + "\n")
+        if alignments[count_alignments][1] != s2:
+            verified = False
+            print(alignments[count_alignments][1] + "\n" + s2 + "\n")
 
-	verified = True
-	for i in range(1, len(M)):
-		for j in range(len(M[i])):
-			if not (M[0][j] == "-" and M[i][j] == "-"): # M[0] is center sequence
-				s1 += M[0][j]
-				s2 += M[i][j]
-		if alignments[count_alignments][0] != s1 or alignments[count_alignments][1] != s2:
-			verified = False
-			print(alignments[count_alignments])
-			print((s1, s2))
+        count_alignments += 1
+        s1 = ""
+        s2 = ""
 
-		count_alignments += 1
-		s1 = ""
-		s2 = ""
-
-	return verified
+    return verified
 
 
 def main():
